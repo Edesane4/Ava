@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-cream text-ink font-sans antialiased;
+    /* Soft animated joy background behind everything. */
+    background-image: var(--tw-gradient-stops, none);
+    background-color: #fffdf5;
+  }
+
+  /* Friendly focus rings everywhere. */
+  *:focus-visible {
+    @apply outline-none;
+  }
+
+  /* Nicer mobile scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer components {
+  /* Page gradient wrapper used on auth/onboarding screens. */
+  .joy-bg {
+    @apply relative bg-joy-mesh;
+  }
+
+  /* Subtle glassy panel */
+  .glass {
+    @apply border border-white/60 bg-white/70 backdrop-blur;
+  }
+
+  /* Hide scrollbars on horizontal carousels */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
