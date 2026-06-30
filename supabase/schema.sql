@@ -186,6 +186,26 @@ create trigger on_booking_created
   for each row execute function public.handle_new_booking();
 
 -- ════════════════════════════════════════════════════════════════════════
+-- GRANTS
+-- RLS controls WHICH ROWS a role can touch; GRANTs control whether the role
+-- may touch the table at all. Supabase relies on broad grants + RLS for safety.
+-- Without these, the API returns "permission denied for table ...".
+-- ════════════════════════════════════════════════════════════════════════
+grant usage on schema public to anon, authenticated, service_role;
+
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+
+-- Apply the same to any tables/sequences/functions created later.
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on routines to anon, authenticated, service_role;
+
+-- ════════════════════════════════════════════════════════════════════════
 -- ROW LEVEL SECURITY
 -- ════════════════════════════════════════════════════════════════════════
 alter table public.profiles            enable row level security;
