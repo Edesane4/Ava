@@ -136,7 +136,7 @@ language plpgsql
 security definer set search_path = public
 as $$
 declare
-  provider_email text := 'you@example.com'; -- 👈 CHANGE THIS to your email
+  provider_email text := 'edesane4@gmail.com'; -- 👈 the provider account (change if needed)
 begin
   insert into public.profiles (id, email, full_name, avatar_url, role)
   values (
