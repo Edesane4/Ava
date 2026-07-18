@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, isToday, isTomorrow } from "date-fns";
+import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
 import type {
   BookingStatus,
   PaymentMethod,
@@ -30,6 +30,20 @@ export function toSafeDate(value: string | number | Date): Date {
   if (value instanceof Date) return value;
   if (typeof value === "number") return new Date(value);
   return new Date(value.replace(/(\.\d{3})\d+/, "$1"));
+}
+
+/**
+ * Relative time ("2 hours ago") that can NEVER throw — a bad/invalid date
+ * falls back to a friendly string instead of crashing the render.
+ */
+export function safeRelativeTime(value: string | number | Date): string {
+  try {
+    const d = toSafeDate(value);
+    if (Number.isNaN(d.getTime())) return "recently";
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return "recently";
+  }
 }
 
 /** Friendly date: "Today", "Tomorrow", or "Mon, Jul 14". */

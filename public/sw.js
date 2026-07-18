@@ -1,6 +1,6 @@
 /* PawPal service worker — offline support, runtime caching & web push. */
 
-const VERSION = "pawpal-v1";
+const VERSION = "pawpal-v2";
 const APP_SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const DATA = `${VERSION}-data`;
