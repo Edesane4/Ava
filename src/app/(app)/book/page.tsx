@@ -33,7 +33,7 @@ export default function BookPage() {
       case 1:
         return !!draft.scheduledAt;
       case 2:
-        return !!draft.petId;
+        return (draft.petIds ?? []).length > 0;
       case 3:
         return draft.address.trim().length > 2;
       case 4:
@@ -46,7 +46,7 @@ export default function BookPage() {
   const stepValidationMessage = [
     "Pick a service first 🐾",
     "Choose a day & time 📅",
-    "Select a pet 🐶",
+    "Select at least one pet 🐾",
     "Add an address 🏡",
     "Choose a payment method 💛",
   ][step];
@@ -56,26 +56,35 @@ export default function BookPage() {
     if (!user || !draft.service || !draft.scheduledAt) return;
     setSubmitting(true);
     try {
-      // Grab a friendly snapshot of the pet name.
-      let petName: string | null = null;
-      if (draft.petId) {
-        const { data: pet } = await supabase
+      const petIds = draft.petIds ?? [];
+
+      // Grab friendly name snapshots for every selected pet.
+      let petNames: string[] = [];
+      if (petIds.length) {
+        const { data: pets } = await supabase
           .from("pets")
-          .select("name")
-          .eq("id", draft.petId)
-          .single();
-        petName = pet?.name ?? null;
+          .select("id, name")
+          .in("id", petIds);
+        // Preserve the order the customer selected them in.
+        petNames = petIds
+          .map((id) => pets?.find((p) => p.id === id)?.name)
+          .filter((n): n is string => !!n);
       }
+
+      // Full price per pet: base × number of pets.
+      const petCount = Math.max(1, petIds.length);
+      const totalCents = draft.service.price_cents * petCount;
 
       const { data, error } = await supabase
         .from("bookings")
         .insert({
           customer_id: user.id,
-          pet_id: draft.petId,
+          pet_id: petIds[0] ?? null, // primary pet (kept for existing displays)
+          pet_ids: petIds,
           service_id: draft.service.id,
           service_name: draft.service.name,
-          pet_name: petName,
-          price_cents: draft.service.price_cents,
+          pet_name: petNames.join(" & ") || null,
+          price_cents: totalCents,
           scheduled_at: draft.scheduledAt,
           duration_min: draft.service.duration_min,
           address: draft.address,
@@ -142,9 +151,13 @@ export default function BookPage() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Sticky action bar */}
-      <div className="fixed inset-x-0 bottom-24 z-30 px-4">
-        <div className="mx-auto flex max-w-md gap-3">
+      {/* Spacer so the last field never hides behind the docked action bar. */}
+      <div aria-hidden className="h-24" />
+
+      {/* Docked action bar — solid pill pinned above the tab bar so Continue
+          stays visible & tappable no matter how far you scroll. */}
+      <div className="fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 px-4">
+        <div className="mx-auto flex max-w-md gap-3 rounded-full border border-white/60 bg-white/90 p-2 shadow-[0_12px_34px_-10px_rgba(45,42,69,0.45)] backdrop-blur">
           {step > 0 && (
             <Button
               variant="outline"

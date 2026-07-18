@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { PawLoader } from "@/components/ui/Loaders";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PushOptIn } from "@/components/pwa/PushOptIn";
-import { cn } from "@/lib/utils";
+import { cn, toSafeDate } from "@/lib/utils";
 
 export default function NotificationsPage() {
   const { user } = useSession();
@@ -68,7 +68,7 @@ export default function NotificationsPage() {
                   <p className="font-display font-bold text-ink">{n.title}</p>
                   {n.body && <p className="text-sm text-ink/60">{n.body}</p>}
                   <p className="mt-0.5 text-xs text-ink/35">
-                    {formatDistanceToNow(new Date(n.created_at), {
+                    {formatDistanceToNow(toSafeDate(n.created_at), {
                       addSuffix: true,
                     })}
                   </p>

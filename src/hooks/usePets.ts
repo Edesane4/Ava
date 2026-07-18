@@ -33,6 +33,7 @@ export function usePets(userId?: string | null) {
           .from("pets")
           .update({
             name: pet.name,
+            species: pet.species,
             breed: pet.breed,
             notes: pet.notes,
             photo_url: pet.photo_url,
@@ -43,6 +44,7 @@ export function usePets(userId?: string | null) {
         const { error } = await supabase.from("pets").insert({
           owner_id: userId,
           name: pet.name,
+          species: pet.species ?? "dog",
           breed: pet.breed,
           notes: pet.notes,
           photo_url: pet.photo_url,

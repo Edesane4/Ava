@@ -20,9 +20,21 @@ export function formatPrice(cents: number) {
   }).format(cents / 100);
 }
 
+/**
+ * Safely parse a timestamp into a Date.
+ * Postgres/PostgREST returns microsecond precision (…:00.123456+00), which
+ * Safari/iOS cannot parse → "Invalid Date". Trim fractional seconds to 3
+ * digits so every browser can parse database timestamps reliably.
+ */
+export function toSafeDate(value: string | number | Date): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value);
+  return new Date(value.replace(/(\.\d{3})\d+/, "$1"));
+}
+
 /** Friendly date: "Today", "Tomorrow", or "Mon, Jul 14". */
 export function friendlyDate(iso: string | Date) {
-  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const d = toSafeDate(iso);
   if (isToday(d)) return "Today";
   if (isTomorrow(d)) return "Tomorrow";
   return format(d, "EEE, MMM d");
@@ -30,7 +42,7 @@ export function friendlyDate(iso: string | Date) {
 
 /** "3:30 PM" */
 export function friendlyTime(iso: string | Date) {
-  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const d = toSafeDate(iso);
   return format(d, "h:mm a");
 }
 
@@ -93,6 +105,11 @@ export function petAvatar(name: string, photoUrl?: string | null) {
   if (photoUrl) return photoUrl;
   const seed = encodeURIComponent(name || "buddy");
   return `https://api.dicebear.com/9.x/big-ears-neutral/svg?seed=${seed}&backgroundColor=ffd5dc,c0aede,b6e3f4,d1f4d9`;
+}
+
+/** 🐶 / 🐱 badge for a pet's species. Defaults to dog. */
+export function speciesEmoji(species?: string | null) {
+  return species === "cat" ? "🐱" : "🐶";
 }
 
 /** Build 30-minute time slots between start and end hour (local time). */

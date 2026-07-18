@@ -7,7 +7,7 @@ import { Camera, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Textarea } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
-import { petAvatar } from "@/lib/utils";
+import { petAvatar, cn } from "@/lib/utils";
 import type { Pet } from "@/lib/types";
 
 /** Modal sheet for adding / editing a pet, with photo upload. */
@@ -27,6 +27,7 @@ export function PetForm({
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(pet?.name ?? "");
+  const [species, setSpecies] = useState<"dog" | "cat">(pet?.species ?? "dog");
   const [breed, setBreed] = useState(pet?.breed ?? "");
   const [notes, setNotes] = useState(pet?.notes ?? "");
   const [photoUrl, setPhotoUrl] = useState<string | null>(pet?.photo_url ?? null);
@@ -55,6 +56,7 @@ export function PetForm({
       await onSave({
         id: pet?.id,
         name: name.trim(),
+        species,
         breed: breed.trim() || null,
         notes: notes.trim() || null,
         photo_url: photoUrl,
@@ -138,6 +140,26 @@ export function PetForm({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
+              </div>
+              <div>
+                <Label>Pet type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["dog", "cat"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setSpecies(s)}
+                      className={cn(
+                        "rounded-3xl border-2 py-3 font-display text-base font-bold capitalize transition",
+                        species === s
+                          ? "border-coral bg-coral/10 text-coral-dark shadow-coral"
+                          : "border-ink/10 bg-white/80 text-ink/60 hover:border-teal/40",
+                      )}
+                    >
+                      {s === "dog" ? "🐶 Dog" : "🐱 Cat"}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <Label htmlFor="pet-breed">Breed</Label>

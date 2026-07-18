@@ -12,7 +12,7 @@ import type { BookingDraft, PaymentMethod, Service } from "@/lib/types";
 const emptyDraft: BookingDraft = {
   service: null,
   scheduledAt: null,
-  petId: null,
+  petIds: [],
   address: "",
   lat: null,
   lng: null,
@@ -28,7 +28,7 @@ interface BookingState {
   back: () => void;
   setService: (service: Service) => void;
   setSchedule: (iso: string) => void;
-  setPet: (petId: string) => void;
+  togglePet: (petId: string) => void;
   setLocation: (address: string, lat?: number | null, lng?: number | null) => void;
   setInstructions: (text: string) => void;
   setPayment: (method: PaymentMethod) => void;
@@ -47,7 +47,14 @@ export const useBookingStore = create<BookingState>()(
         set((s) => ({ draft: { ...s.draft, service } })),
       setSchedule: (iso) =>
         set((s) => ({ draft: { ...s.draft, scheduledAt: iso } })),
-      setPet: (petId) => set((s) => ({ draft: { ...s.draft, petId } })),
+      togglePet: (petId) =>
+        set((s) => {
+          const current = s.draft.petIds ?? [];
+          const petIds = current.includes(petId)
+            ? current.filter((id) => id !== petId)
+            : [...current, petId];
+          return { draft: { ...s.draft, petIds } };
+        }),
       setLocation: (address, lat = null, lng = null) =>
         set((s) => ({ draft: { ...s.draft, address, lat, lng } })),
       setInstructions: (specialInstructions) =>
@@ -56,6 +63,7 @@ export const useBookingStore = create<BookingState>()(
         set((s) => ({ draft: { ...s.draft, paymentMethod } })),
       reset: () => set({ step: 0, draft: emptyDraft }),
     }),
-    { name: "pawpal-booking-draft" },
+    // v2: draft shape changed (petId → petIds). New key ignores stale drafts.
+    { name: "pawpal-booking-draft-v2" },
   ),
 );

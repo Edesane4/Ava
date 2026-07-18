@@ -9,23 +9,26 @@ import { PetForm } from "@/components/PetForm";
 import { Button } from "@/components/ui/Button";
 import { PawLoader } from "@/components/ui/Loaders";
 import { useBookingStore } from "@/store/useBookingStore";
-import { petAvatar, cn } from "@/lib/utils";
+import { petAvatar, speciesEmoji, cn } from "@/lib/utils";
 
-/** Choose which pet the booking is for (or add a new one inline). */
+/** Choose which pet(s) the booking is for (or add a new one inline). */
 export function StepPet() {
   const { user } = useSession();
   const { pets, loading, savePet, uploadPhoto } = usePets(user?.id);
   const draft = useBookingStore((s) => s.draft);
-  const setPet = useBookingStore((s) => s.setPet);
+  const togglePet = useBookingStore((s) => s.togglePet);
+  const selectedIds = draft.petIds ?? [];
   const [formOpen, setFormOpen] = useState(false);
 
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-display text-xl font-extrabold text-ink">
-          Who&apos;s the lucky pup? 🐶
+          Who are we caring for? 🐾
         </h2>
-        <p className="text-sm text-ink/60">Select a pet for this visit.</p>
+        <p className="text-sm text-ink/60">
+          Pick one or more pets — each pet is full price.
+        </p>
       </div>
 
       {loading ? (
@@ -33,11 +36,11 @@ export function StepPet() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {pets.map((pet) => {
-            const selected = draft.petId === pet.id;
+            const selected = selectedIds.includes(pet.id);
             return (
               <button
                 key={pet.id}
-                onClick={() => setPet(pet.id)}
+                onClick={() => togglePet(pet.id)}
                 className={cn(
                   "relative flex flex-col items-center gap-2 rounded-4xl border-2 bg-white/80 p-4 transition",
                   selected
@@ -60,7 +63,7 @@ export function StepPet() {
                   />
                 </div>
                 <span className="font-display font-extrabold text-ink">
-                  {pet.name}
+                  {speciesEmoji(pet.species)} {pet.name}
                 </span>
                 {pet.breed && (
                   <span className="-mt-1.5 text-xs text-ink/50">

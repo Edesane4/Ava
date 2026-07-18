@@ -46,6 +46,7 @@ create table if not exists public.pets (
   id          uuid primary key default gen_random_uuid(),
   owner_id    uuid not null references public.profiles(id) on delete cascade,
   name        text not null,
+  species     text not null default 'dog' check (species in ('dog', 'cat')),
   breed       text,
   photo_url   text,
   notes       text,
@@ -80,7 +81,8 @@ create table if not exists public.bookings (
 
   -- Denormalized snapshots so history stays accurate even if a service/pet changes.
   service_name         text,
-  pet_name             text,
+  pet_name             text,           -- combined label, e.g. "Biscuit & Luna"
+  pet_ids              uuid[] default '{}',  -- all pets on this booking
   price_cents          int not null default 0,
 
   scheduled_at         timestamptz not null,
@@ -281,12 +283,11 @@ alter publication supabase_realtime add table public.notifications;
 -- ════════════════════════════════════════════════════════════════════════
 insert into public.services (slug, name, description, category, duration_min, price_cents, emoji, sort_order)
 values
-  ('walk-30', 'Quick Walk',      'A brisk 30-minute neighborhood stroll — perfect for a midday potty break and some zoomies.', 'walk', 30, 2000, '🦮', 1),
-  ('walk-45', 'Happy Walk',      'A 45-minute adventure walk with plenty of sniffs, play, and fresh water.',                 'walk', 45, 2800, '🐕', 2),
-  ('walk-60', 'Big Adventure',   'A full 60-minute walk with extra play time, training reinforcement & lots of love.',       'walk', 60, 3500, '🌳', 3),
-  ('home-drop', 'Drop-In Visit', 'A 30-minute home visit: feeding, fresh water, potty break, and cuddles.',                  'home_care', 30, 2500, '🏡', 4),
-  ('home-sit',  'Pet Sitting',   'Extended in-home care (per visit): feeding, playtime, meds, and companionship.',           'home_care', 60, 4500, '🛋️', 5),
-  ('home-overnight', 'Overnight Stay', 'Cozy overnight care so your pet is never alone. Includes evening + morning routine.', 'home_care', null, 7500, '🌙', 6)
+  ('walk-30', 'Quick Walk',      'A brisk 30-minute neighborhood stroll — perfect for a midday potty break and some zoomies.', 'walk', 30, 1000, '🦮', 1),
+  ('walk-45', 'Happy Walk',      'A 45-minute adventure walk with plenty of sniffs, play, and fresh water.',                 'walk', 45, 1500, '🐕', 2),
+  ('walk-60', 'Big Adventure',   'A full 60-minute walk with extra play time, training reinforcement & lots of love.',       'walk', 60, 2000, '🌳', 3),
+  ('home-drop', 'Drop-In Visit', 'A 30-minute home visit: feeding, fresh water, potty break, and cuddles.',                  'home_care', 30, 1500, '🏡', 4),
+  ('home-sit',  'Pet Sitting',   'Extended in-home care (per visit): feeding, playtime, meds, and companionship.',           'home_care', 60, 2500, '🛋️', 5)
 on conflict (slug) do nothing;
 
 -- ════════════════════════════════════════════════════════════════════════

@@ -23,18 +23,29 @@ export function useAvailability(date: Date | null) {
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
 
+    const SLOT_MS = 30 * 60 * 1000; // slots are 30 minutes apart
+
     const load = async () => {
+      // Look back far enough that a long booking starting before this day
+      // (or before a slot) still blocks the slots it overlaps.
+      const lookback = new Date(start.getTime() - 12 * 60 * 60 * 1000);
       const { data } = await supabase
         .from("bookings")
-        .select("scheduled_at, status")
-        .gte("scheduled_at", start.toISOString())
+        .select("scheduled_at, duration_min, status")
+        .gte("scheduled_at", lookback.toISOString())
         .lte("scheduled_at", end.toISOString())
         .in("status", ["pending", "confirmed"]);
       if (!active) return;
+
       const set = new Set<number>();
-      (data ?? []).forEach((b: { scheduled_at: string }) => {
-        set.add(new Date(b.scheduled_at).getTime());
-      });
+      (data ?? []).forEach(
+        (b: { scheduled_at: string; duration_min: number | null }) => {
+          const bStart = new Date(b.scheduled_at).getTime();
+          const bEnd = bStart + (b.duration_min ?? 60) * 60 * 1000;
+          // Block every 30-min slot the booking overlaps.
+          for (let t = bStart; t < bEnd; t += SLOT_MS) set.add(t);
+        },
+      );
       setTaken(set);
       setLoading(false);
     };

@@ -25,7 +25,10 @@ export function StepPayment() {
   const draft = useBookingStore((s) => s.draft);
   const setPayment = useBookingStore((s) => s.setPayment);
 
-  const amountDollars = (draft.service?.price_cents ?? 0) / 100;
+  // Full price per pet: base × number of pets.
+  const petCount = Math.max(1, (draft.petIds ?? []).length);
+  const totalCents = (draft.service?.price_cents ?? 0) * petCount;
+  const amountDollars = totalCents / 100;
   const note = `PawPal · ${draft.service?.name ?? "Pet care"}`;
   const selected = draft.paymentMethod;
 
@@ -45,11 +48,22 @@ export function StepPayment() {
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold text-ink/60">
             {draft.service?.emoji} {draft.service?.name}
+            {petCount > 1 && (
+              <span className="text-ink/45">
+                {" "}
+                × {petCount} pets
+              </span>
+            )}
           </span>
           <span className="font-display text-lg font-extrabold text-ink">
-            {formatPrice(draft.service?.price_cents ?? 0)}
+            {formatPrice(totalCents)}
           </span>
         </div>
+        {petCount > 1 && (
+          <p className="mt-0.5 text-xs text-ink/45">
+            {formatPrice(draft.service?.price_cents ?? 0)} each × {petCount} pets
+          </p>
+        )}
         {draft.scheduledAt && (
           <p className="mt-1 text-sm text-ink/60">
             📅 {friendlyDateTime(draft.scheduledAt)}
@@ -93,7 +107,7 @@ export function StepPayment() {
           >
             <div className="rounded-4xl border-2 border-teal/30 bg-white p-5 text-center">
               <p className="mb-3 font-display font-bold text-ink">
-                Scan to pay {formatPrice(draft.service?.price_cents ?? 0)} ⚡
+                Scan to pay {formatPrice(totalCents)} ⚡
               </p>
               <div className="mx-auto inline-block rounded-3xl bg-white p-3 shadow-pop">
                 <QRCodeSVG

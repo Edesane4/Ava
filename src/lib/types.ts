@@ -32,10 +32,13 @@ export interface Profile {
   created_at: string;
 }
 
+export type PetSpecies = "dog" | "cat";
+
 export interface Pet {
   id: string;
   owner_id: string;
   name: string;
+  species: PetSpecies;
   breed: string | null;
   photo_url: string | null;
   notes: string | null;
@@ -62,6 +65,7 @@ export interface Booking {
   service_id: string | null;
   service_name: string | null;
   pet_name: string | null;
+  pet_ids: string[] | null;
   price_cents: number;
   scheduled_at: string;
   duration_min: number | null;
@@ -93,7 +97,7 @@ export interface AppNotification {
 export interface BookingDraft {
   service: Service | null;
   scheduledAt: string | null; // ISO string
-  petId: string | null;
+  petIds: string[]; // one or more pets — price scales per pet
   address: string;
   lat: number | null;
   lng: number | null;

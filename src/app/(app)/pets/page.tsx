@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { PawLoader } from "@/components/ui/Loaders";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/Toast";
-import { petAvatar } from "@/lib/utils";
+import { petAvatar, speciesEmoji } from "@/lib/utils";
 import type { Pet } from "@/lib/types";
 
 export default function PetsPage() {
@@ -82,7 +82,7 @@ export default function PetsPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-display text-lg font-extrabold text-ink">
-                  {pet.name}
+                  {speciesEmoji(pet.species)} {pet.name}
                 </p>
                 {pet.breed && (
                   <p className="text-sm text-ink/60">{pet.breed}</p>
