@@ -25,6 +25,17 @@ export function useAvailability(date: Date | null) {
 
     const SLOT_MS = 30 * 60 * 1000; // slots are 30 minutes apart
 
+    // Align a timestamp down to the nearest :00 / :30 slot (local time).
+    const floorToSlot = (t: number) => {
+      const d = new Date(t);
+      d.setSeconds(0, 0);
+      d.setMinutes(d.getMinutes() < 30 ? 0 : 30);
+      return d.getTime();
+    };
+    const blockInterval = (set: Set<number>, s: number, e: number) => {
+      for (let t = floorToSlot(s); t < e; t += SLOT_MS) set.add(t);
+    };
+
     const load = async () => {
       // Look back far enough that a long booking starting before this day
       // (or before a slot) still blocks the slots it overlaps.
@@ -42,10 +53,28 @@ export function useAvailability(date: Date | null) {
         (b: { scheduled_at: string; duration_min: number | null }) => {
           const bStart = new Date(b.scheduled_at).getTime();
           const bEnd = bStart + (b.duration_min ?? 60) * 60 * 1000;
-          // Block every 30-min slot the booking overlaps.
-          for (let t = bStart; t < bEnd; t += SLOT_MS) set.add(t);
+          blockInterval(set, bStart, bEnd);
         },
       );
+
+      // Merge the provider's external calendar (Skylight/Apple/Google) busy
+      // times. Fails soft: if unconfigured/unreachable, nothing extra blocks.
+      try {
+        const y = start.getFullYear();
+        const m = String(start.getMonth() + 1).padStart(2, "0");
+        const d = String(start.getDate()).padStart(2, "0");
+        const res = await fetch(`/api/busy?date=${y}-${m}-${d}`);
+        if (res.ok && active) {
+          const { busy } = (await res.json()) as {
+            busy: { start: number; end: number }[];
+          };
+          busy?.forEach((iv) => blockInterval(set, iv.start, iv.end));
+        }
+      } catch {
+        // ignore — calendar blackout is best-effort
+      }
+
+      if (!active) return;
       setTaken(set);
       setLoading(false);
     };

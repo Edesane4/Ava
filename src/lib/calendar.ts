@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import type { Booking } from "@/lib/types";
+import { toSafeDate } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────
 // Free "copy to calendar" helpers — no API needed on the client.
@@ -72,4 +73,72 @@ export function downloadIcs(b: Booking) {
   a.download = `pawpal-${b.id.slice(0, 8)}.ics`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Subscribable calendar FEED (Flow 1): one VCALENDAR containing all
+// bookings, served at /api/calendar/<token>.ics. Skylight & Apple
+// Calendar subscribe to this URL and mirror your appointments.
+// ─────────────────────────────────────────────────────────────
+
+/** UTC basic format with trailing Z: 20260718T153000Z */
+function toIcsUtc(d: Date) {
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+}
+
+/** Escape a value for an iCalendar text field. */
+function escapeIcs(s: string) {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
+/** One VEVENT block for a booking. */
+export function bookingToVevent(b: Booking): string {
+  const start = toSafeDate(b.scheduled_at);
+  const end = new Date(start.getTime() + (b.duration_min ?? 60) * 60000);
+  const description = [
+    `Service: ${b.service_name ?? "Pet care"}`,
+    b.pet_name ? `Pet: ${b.pet_name}` : "",
+    b.address ? `Where: ${b.address}` : "",
+    b.special_instructions ? `Notes: ${b.special_instructions}` : "",
+    `Status: ${b.status}`,
+    "Booked via PawPal 🐾",
+  ]
+    .filter(Boolean)
+    .map(escapeIcs)
+    .join("\\n");
+
+  return [
+    "BEGIN:VEVENT",
+    `UID:${b.id}@pawpal`,
+    `DTSTAMP:${toIcsUtc(new Date())}`,
+    `DTSTART:${toIcsUtc(start)}`,
+    `DTEND:${toIcsUtc(end)}`,
+    `SUMMARY:${escapeIcs(`🐾 ${b.service_name ?? "Pet care"} — ${b.pet_name ?? "pet"}`)}`,
+    `DESCRIPTION:${description}`,
+    b.address ? `LOCATION:${escapeIcs(b.address)}` : "",
+    `STATUS:${b.status === "confirmed" ? "CONFIRMED" : "TENTATIVE"}`,
+    "END:VEVENT",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+}
+
+/** Full VCALENDAR feed for a list of bookings. */
+export function buildIcsFeed(bookings: Booking[], name = "PawPal Bookings"): string {
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//PawPal//Bookings//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    `X-WR-CALNAME:${escapeIcs(name)}`,
+    "X-PUBLISHED-TTL:PT1H",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    ...bookings.map(bookingToVevent),
+    "END:VCALENDAR",
+  ].join("\r\n");
 }

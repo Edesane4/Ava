@@ -156,6 +156,27 @@ The app calls this through the server route `/api/notify` after each booking. If
 
 ---
 
+## 📆 Skylight / Apple Calendar sync
+
+Two independent flows, both driven by standard `.ics` calendars (no Google needed).
+
+**Flow 1 — your appointments show up on Skylight & Apple Calendar**
+1. Set `CALENDAR_FEED_TOKEN` to any long random string (e.g. `openssl rand -hex 20`).
+2. Your private feed URL is: `https://<your-site>/api/calendar/<CALENDAR_FEED_TOKEN>`
+3. Subscribe to that URL:
+   - **Skylight:** add it as a subscribed calendar (calendar-URL / ICS link).
+   - **Apple Calendar (iPhone):** Settings → Calendar → Accounts → Add Account → Other → **Add Subscribed Calendar** → paste the URL.
+   - Subscribed calendars refresh on the client's own schedule (typically every few hours), so new bookings appear automatically but not instantly.
+
+**Flow 2 — the app blacks out times you're busy**
+1. Publish the calendar that holds your real availability as a public `.ics`:
+   - **iCloud:** Calendar app → hover a calendar → **Share → Public Calendar** → copy the `webcal://…` link. (Because Skylight ↔ iCloud two-way sync, anything on your frame or phone is included.)
+   - **Google:** Calendar settings → *Integrate calendar* → **Secret address in iCal format**.
+2. Set `PROVIDER_BUSY_ICS_URL` to that link (`webcal://` is fine — it's auto-upgraded).
+3. The booking picker now grays out any slot overlapping those events, on top of existing PawPal bookings.
+
+> Single events black out exactly. Recurring events are expanded best-effort; unusual DST/time-zone edge cases may be approximate. Leaving `PROVIDER_BUSY_ICS_URL` unset simply disables Flow 2.
+
 ## ☁️ Deploy to Vercel (free)
 
 1. Push this repo to GitHub.
